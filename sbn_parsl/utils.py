@@ -11,7 +11,7 @@ from parsl.providers import PBSProProvider, LocalProvider
 from parsl.executors import HighThroughputExecutor, ThreadPoolExecutor
 from parsl.launchers import MpiExecLauncher, GnuParallelLauncher
 from parsl.monitoring.monitoring import MonitoringHub
-
+from parsl.dataflow.memoization import BasicMemoizer ## by sb
 
 POLARIS_OPTS = {
     'hostname': 'polaris',
@@ -190,14 +190,21 @@ def create_parsl_config(user_opts, spack_opts=[], local: bool=False):
     provider = create_provider_by_hostname(user_opts, system_opts, spack_opts, local)
     executor = create_executor_by_hostname(user_opts, system_opts, provider)
     checkpoints = get_all_checkpoints(user_opts["run_dir"])
+
+    memoizer = BasicMemoizer(
+        checkpoint_mode='task_exit',
+        checkpoint_files=checkpoints
+    )## added by sb
+
     config = Config(
-            checkpoint_mode='task_exit',
+            #checkpoint_mode='task_exit', ## by sb
             executors=[executor],
-            checkpoint_files=checkpoints,
+            memoizer=memoizer, ## by sb
+            #checkpoint_files=checkpoints, ## by sb
             run_dir=user_opts["run_dir"],
             strategy=user_opts.get("strategy", "none"),
             retries=user_opts.get("retries", 5),
-            app_cache=True,
+            #app_cache=True, # by sb
             initialize_logging=True,
             # monitoring=MonitoringHub(
             #     hub_address=address_by_interface('bond0'),
